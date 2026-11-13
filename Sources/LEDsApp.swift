@@ -73,10 +73,23 @@ final class LEDModel: ObservableObject {
     @Published var launchAtLogin = false
     @Published var loginMessage: String?
 
-    private var timer: Timer?
+    private var blinkTimer: Timer?
     private var blinkPhase = false
+    private var capsWatcher: CapsLockWatcher?
+    private var wakeObserver: NSObjectProtocol?
+    /// Muda a cada troca de modo; reaplicações agendadas de um modo antigo se descartam.
+    private var capsGeneration = 0
 
-    init() { refresh() }
+    init() {
+        refresh()
+        if caps.hasAccess { caps.prepare() }
+        // Qualquer forma de sair (botão, Cmd+Q, logout) devolve o LED ao normal.
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.cleanUpCaps() }
+        }
+    }
 
     func refresh() {
         capsHasAccess = caps.hasAccess
@@ -102,39 +115,87 @@ final class LEDModel: ObservableObject {
     }
 
     func setCapsMode(_ mode: CapsMode) {
-        timer?.invalidate()
-        timer = nil
+        stopCapsActivity()
         capsMessage = nil
         capsMode = mode
+        let generation = capsGeneration
+        let report: @MainActor (Bool) -> Void = { [weak self] ok in
+            self?.capsWriteFinished(ok, generation: generation)
+        }
 
-        let ok: Bool
         switch mode {
         case .auto:
-            ok = caps.setLED(caps.capsLockIsOn)
+            caps.setLED(caps.capsLockIsOn, completion: report)
+
         case .on, .off:
-            let on = mode == .on
-            ok = caps.setLED(on)
-            // Reaplica a cada 1 s: apertar o Caps Lock faz o sistema mexer no LED.
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-                MainActor.assumeIsolated { _ = self?.caps.setLED(on) }
+            caps.setLED(mode == .on, completion: report)
+            // Sem polling: só reaplica quando o Caps Lock muda (o sistema mexe no LED)
+            // ou quando o Mac acorda.
+            capsWatcher = CapsLockWatcher { [weak self] _ in self?.reapplyForcedLED() }
+            if capsWatcher == nil {
+                capsMessage = "Aviso: ao apertar Caps Lock o LED pode voltar ao normal."
             }
+            wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.reapplyForcedLED() }
+            }
+
         case .blink:
             blinkPhase = true
-            ok = caps.setLED(true)
-            timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
+            caps.setLED(true, completion: report)
+            let timer = Timer(timeInterval: 0.4, repeats: true) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     self.blinkPhase.toggle()
                     self.caps.setLED(self.blinkPhase)
                 }
             }
+            // Folga de 10%: o macOS pode agrupar este despertar com outros.
+            timer.tolerance = 0.04
+            RunLoop.main.add(timer, forMode: .common)
+            blinkTimer = timer
         }
+    }
 
-        if !ok {
-            timer?.invalidate()
-            timer = nil
+    private func capsWriteFinished(_ ok: Bool, generation: Int) {
+        guard !ok, generation == capsGeneration else { return }
+        stopCapsActivity()
+        capsMode = .auto
+        capsMessage = "Não consegui acessar o teclado. Se acabou de dar a permissão, saia e abra o app de novo."
+    }
+
+    /// O sistema atualiza o LED logo depois da mudança do Caps Lock; reaplica um
+    /// pouco depois (duas vezes, para não perder a corrida com ele).
+    private func reapplyForcedLED() {
+        guard capsMode == .on || capsMode == .off else { return }
+        let on = capsMode == .on
+        let generation = capsGeneration
+        for delay in [0.1, 0.4] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, generation == self.capsGeneration else { return }
+                self.caps.setLED(on)
+            }
+        }
+    }
+
+    private func stopCapsActivity() {
+        capsGeneration += 1
+        blinkTimer?.invalidate()
+        blinkTimer = nil
+        capsWatcher = nil
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
+        }
+        wakeObserver = nil
+    }
+
+    private func cleanUpCaps() {
+        let wasForced = capsMode != .auto
+        stopCapsActivity()
+        if wasForced {
             capsMode = .auto
-            capsMessage = "Não consegui acessar o teclado. Se acabou de dar a permissão, saia e abra o app de novo."
+            caps.restoreNow()
         }
     }
 
@@ -192,9 +253,7 @@ final class LEDModel: ObservableObject {
     }
 
     func quit() {
-        timer?.invalidate()
-        if capsMode != .auto { caps.restore() }
-        NSApp.terminate(nil)
+        NSApp.terminate(nil) // a limpeza do LED roda em willTerminate
     }
 }
 

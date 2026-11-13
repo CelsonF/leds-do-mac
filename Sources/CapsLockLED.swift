@@ -5,8 +5,18 @@ import IOKit.hid
 /// LED do Caps Lock via IOKit HID.
 /// Liga/desliga só a luz — o estado real do Caps Lock não muda.
 /// Requer a permissão "Monitoramento de Entrada" (Ajustes > Privacidade e Segurança).
-final class CapsLockLED {
+///
+/// A escrita no teclado leva alguns milissegundos (a primeira, que abre o
+/// dispositivo, ~60 ms), então tudo roda numa fila serial fora da main thread.
+/// A ordem dos pedidos é preservada pela fila.
+final class CapsLockLED: @unchecked Sendable {
+    private let queue = DispatchQueue(label: "leds.capslock", qos: .userInitiated)
+
+    // Acessados só dentro de `queue`.
     private var manager: IOHIDManager?
+    private var opened: [(device: IOHIDDevice, leds: [IOHIDElement])] = []
+
+    private static let options = IOOptionBits(kIOHIDOptionsTypeNone)
 
     var hasAccess: Bool {
         IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
@@ -27,10 +37,43 @@ final class CapsLockLED {
         CGEventSource.flagsState(.combinedSessionState).contains(.maskAlphaShift)
     }
 
-    /// Teclados já abertos, com seus elementos de LED do Caps Lock.
-    private var opened: [(device: IOHIDDevice, leds: [IOHIDElement])] = []
+    /// Abre os teclados em segundo plano, para o primeiro clique ser instantâneo.
+    func prepare() {
+        queue.async { self.openKeyboards() }
+    }
 
-    private static let options = IOOptionBits(kIOHIDOptionsTypeNone)
+    /// Acende/apaga o LED em segundo plano. `completion` (opcional) roda na main thread
+    /// com false se nenhum LED foi alterado.
+    func setLED(_ on: Bool, completion: (@MainActor (Bool) -> Void)? = nil) {
+        queue.async {
+            let ok = self.apply(on)
+            if let completion {
+                Task { @MainActor in completion(ok) }
+            }
+        }
+    }
+
+    /// Versão síncrona: espera a escrita terminar (usada ao sair do app).
+    @discardableResult
+    func setLEDNow(_ on: Bool) -> Bool {
+        queue.sync { apply(on) }
+    }
+
+    /// Devolve o LED ao estado real do Caps Lock, esperando terminar.
+    func restoreNow() {
+        setLEDNow(capsLockIsOn)
+    }
+
+    // MARK: - Dentro da fila
+
+    private func apply(_ on: Bool) -> Bool {
+        openKeyboards()
+        if write(on) { return true }
+        // O sistema às vezes recusa uma escrita isolada: reabre e tenta de novo.
+        closeKeyboards()
+        openKeyboards()
+        return write(on)
+    }
 
     /// Abre cada teclado individualmente (IOHIDManagerOpen falha inteiro
     /// se um único dispositivo recusar, então não dá pra confiar nele).
@@ -80,21 +123,64 @@ final class CapsLockLED {
         }
         return changed
     }
+}
 
-    /// Acende/apaga o LED em todo teclado que tenha LED de Caps Lock.
-    /// Retorna false se nenhum LED foi alterado.
-    @discardableResult
-    func setLED(_ on: Bool) -> Bool {
-        openKeyboards()
-        if write(on) { return true }
-        // O sistema às vezes recusa uma escrita isolada: reabre e tenta de novo.
-        closeKeyboards()
-        openKeyboards()
-        return write(on)
+/// Avisa quando o estado do Caps Lock muda, sem polling: um event tap
+/// "listen-only" recebe só eventos de modificadores (flagsChanged).
+/// Usa a mesma permissão "Monitoramento de Entrada" do LED.
+/// Precisa ser criado na main thread; o aviso chega na main thread.
+final class CapsLockWatcher {
+    private var tap: CFMachPort?
+    private var source: CFRunLoopSource?
+    private var last: Bool
+    private let onChange: @MainActor (Bool) -> Void
+
+    /// Retorna nil se o sistema não deixar criar o event tap (sem permissão).
+    init?(onChange: @escaping @MainActor (Bool) -> Void) {
+        self.onChange = onChange
+        last = CGEventSource.flagsState(.combinedSessionState).contains(.maskAlphaShift)
+
+        let mask = CGEventMask(1) << CGEventMask(CGEventType.flagsChanged.rawValue)
+        let refcon = Unmanaged.passUnretained(self).toOpaque()
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .tailAppendEventTap,
+            options: .listenOnly,
+            eventsOfInterest: mask,
+            callback: { _, type, event, refcon in
+                if let refcon {
+                    Unmanaged<CapsLockWatcher>.fromOpaque(refcon).takeUnretainedValue().handle(type, event)
+                }
+                return Unmanaged.passUnretained(event)
+            },
+            userInfo: refcon
+        ) else { return nil }
+
+        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        self.tap = tap
+        self.source = source
     }
 
-    /// Devolve o LED ao estado real do Caps Lock.
-    func restore() {
-        setLED(capsLockIsOn)
+    deinit {
+        if let tap {
+            CGEvent.tapEnable(tap: tap, enable: false)
+            CFMachPortInvalidate(tap)
+        }
+        if let source {
+            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        }
+    }
+
+    private func handle(_ type: CGEventType, _ event: CGEvent) {
+        // O sistema desliga taps lentos ou após certas entradas: religa.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
+            return
+        }
+        let now = event.flags.contains(.maskAlphaShift)
+        guard now != last else { return } // Shift, Cmd etc. não interessam
+        last = now
+        MainActor.assumeIsolated { onChange(now) }
     }
 }
