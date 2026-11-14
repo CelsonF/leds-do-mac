@@ -1,3 +1,5 @@
+<img src="Icon/preview.png" width="128" alt="Ícone do LEDs do Mac: lâmpada LED acesa sobre fundo roxo">
+
 # LEDs do Mac
 
 App de barra de menus (ícone de lâmpada ao lado do relógio) para controlar os LEDs do MacBook.
@@ -48,6 +50,12 @@ O app é assinado ad hoc: **toda vez que recompilar**, o macOS trata como app no
 - `Sources/CapsLockLED.swift`: IOKit HID, escreve no elemento de LED (página 0x08, uso 0x02). Muda só a luz, não o estado do Caps Lock. A escrita roda numa fila em segundo plano, sem travar a interface. Nos modos Aceso/Apagado não há polling: um event tap que só escuta (`CapsLockWatcher`) avisa quando o Caps Lock muda e o app reaplica a luz, já que o sistema mexe no LED nessa hora. Também reaplica quando o Mac acorda. Parado, o app não acorda o processador.
 - `Sources/KeyboardBacklight.swift`: `KeyboardBrightnessClient` do framework privado CoreBrightness. Mexer no brilho desliga o ajuste automático (senão o sensor de luz suprime a luz em ambiente claro).
 - `Sources/MagSafeLED.swift`: chave SMC `ACLC` (1 byte: 0 sistema, 1 apagado, 3 verde, 4 laranja). Ler não precisa de root. Para escrever, o app pede a senha via `osascript` e roda o próprio executável com `--magsafe <valor>`, que só aceita esses 4 valores.
+
+O ícone é desenhado em código (`Icon/make-icon.swift`, sem imagens externas). Depois de mudar o desenho, gere de novo `Resources/AppIcon.icns` e `Icon/preview.png`:
+
+```bash
+Icon/make-icon.sh
+```
 
 Diagnóstico pelo terminal:
 
