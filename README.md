@@ -17,22 +17,34 @@ A luz do teclado é uma zona só (todas as teclas juntas, branca).
 **Requisitos:** Mac com Apple Silicon (M1 ou mais novo), macOS 14 ou mais novo.
 O MagSafe só aparece nos modelos com conector MagSafe 3.
 
-## Baixar e usar
+## Instalar
 
-1. Baixe `LEDs-do-Mac.zip` na página de [Releases](../../releases/latest) e descompacte.
-2. Arraste `LEDs.app` para a pasta **Aplicativos**.
-3. Abra o app. Como ele não é notarizado pela Apple, o macOS bloqueia na primeira vez:
-   vá em **Ajustes do Sistema › Privacidade e Segurança**, role até o aviso sobre "LEDs" e clique em **Abrir Mesmo Assim**.
-   Ou, pelo Terminal:
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/LEDs.app
-   ```
-4. Clique na lâmpada na barra de cima.
+Abra o **Terminal** (Aplicativos › Utilitários), cole esta linha e aperte Enter:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh
+```
+
+O [instalador](install.sh) baixa a versão mais recente, coloca o app em **Aplicativos** e abre.
+Para atualizar, rode a mesma linha de novo.
+
+> **Por que pelo Terminal?** O app não é notarizado pela Apple (isso exige uma conta paga de desenvolvedor).
+> Baixado pelo navegador, o macOS diz que não pode verificar o app e oferece mover para o Lixo.
+> Arquivos baixados pelo Terminal não recebem essa marca, então o app abre direto.
 
 ### Permissão do Caps Lock
 
-Na primeira vez, clique em **Dar permissão…** e ative "LEDs" em
-Ajustes do Sistema › Privacidade e Segurança › Monitoramento de Entrada. Depois saia e abra o app de novo.
+Na primeira abertura, o macOS pede a permissão **Monitoramento de Entrada**: clique em
+**Abrir Ajustes do Sistema**, ative "LEDs" e abra o app de novo.
+Só você pode ativar essa permissão; nenhum instalador consegue fazer isso por você.
+
+Ao atualizar, o instalador limpa a permissão antiga (que deixa de valer na versão nova) e o pedido aparece de novo.
+
+### Instalar pelo .zip (alternativa)
+
+1. Baixe `LEDs-do-Mac.zip` na página de [Releases](../../releases/latest), descompacte e arraste `LEDs.app` para **Aplicativos**.
+2. Ao abrir, o macOS bloqueia. Vá em **Ajustes do Sistema › Privacidade e Segurança**, role até o aviso sobre "LEDs" e clique em **Abrir Mesmo Assim**.
+   Ou, pelo Terminal: `xattr -dr com.apple.quarantine /Applications/LEDs.app`
 
 ## Compilar
 
@@ -68,7 +80,7 @@ Testado num MacBook Pro M5 com macOS 27.
 
 ## English
 
-Menu bar app for Apple Silicon MacBooks (macOS 14+) that controls the Caps Lock LED (on, off, blink, without changing Caps Lock state), the keyboard backlight (brightness and ambient auto-adjust) and the MagSafe 3 LED color (green, orange, off, system; asks for the admin password). Download the `.zip` from [Releases](../../releases/latest), or build with `./build.sh`. The camera LED is hardware-wired and cannot be controlled.
+Menu bar app for Apple Silicon MacBooks (macOS 14+) that controls the Caps Lock LED (on, off, blink, without changing Caps Lock state), the keyboard backlight (brightness and ambient auto-adjust) and the MagSafe 3 LED color (green, orange, off, system; asks for the admin password). Install with `curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh` (the app is not notarized, so a browser download gets blocked by Gatekeeper), or build with `./build.sh`. The camera LED is hardware-wired and cannot be controlled.
 
 ## Licença
 

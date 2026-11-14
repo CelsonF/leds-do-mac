@@ -79,16 +79,29 @@ final class LEDModel: ObservableObject {
     private var wakeObserver: NSObjectProtocol?
     /// Muda a cada troca de modo; reaplicações agendadas de um modo antigo se descartam.
     private var capsGeneration = 0
+    private var sigtermSource: DispatchSourceSignal?
 
     init() {
         refresh()
-        if caps.hasAccess { caps.prepare() }
+        if caps.hasAccess {
+            caps.prepare()
+        } else if caps.accessNotAsked {
+            // Primeira abertura: o próprio macOS mostra o pedido de
+            // "Monitoramento de Entrada" (só o usuário pode ativar).
+            caps.requestAccess()
+        }
         // Qualquer forma de sair (botão, Cmd+Q, logout) devolve o LED ao normal.
         NotificationCenter.default.addObserver(
             forName: NSApplication.willTerminateNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.cleanUpCaps() }
         }
+        // O instalador fecha o app com SIGTERM ao atualizar: trata como saída normal.
+        signal(SIGTERM, SIG_IGN)
+        let source = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        source.setEventHandler { NSApp.terminate(nil) }
+        source.resume()
+        sigtermSource = source
     }
 
     func refresh() {
