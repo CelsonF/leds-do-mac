@@ -2,17 +2,31 @@
 
 # LEDs do Mac
 
-App de barra de menus (ícone de lâmpada ao lado do relógio) para controlar os LEDs do MacBook.
-Sem janela, sem ícone no Dock.
+Controle as luzes do seu MacBook pela barra de menus: o LED do Caps Lock, a luz do teclado e o LED do carregador MagSafe.
+O app fica como uma lâmpada ao lado do relógio. Sem janela, sem ícone no Dock. Grátis e open source.
 
-| LED | Controles | Precisa de |
+## Para que serve
+
+O macOS não deixa você mexer nessas luzes diretamente. O LEDs do Mac deixa:
+
+- **Fixar ou apagar a luz do teclado** sem depender do sensor de luz ambiente. Por exemplo: sempre apagada para economizar bateria, ou sempre no mesmo brilho quando a luz do ambiente fica variando.
+- **Usar o LED do Caps Lock como sinal**: aceso, apagado ou piscando, sem ligar o Caps Lock (o que você digita não muda).
+- **Mudar a cor do LED do MagSafe**: verde, laranja ou apagado. Por exemplo: apagar a luz do carregador à noite no quarto. *(Em teste: ainda não confirmado em todos os modelos.)*
+
+E sem pesar no Mac: parado, usa 0% de CPU e não fica verificando nada em segundo plano.
+
+O que ele **não** faz:
+
+- **LED da câmera:** não dá para controlar. A Apple liga essa luz direto no hardware da câmera, para ninguém conseguir filmar escondido.
+- **Tecla por tecla ou cores no teclado:** a luz do teclado do MacBook é uma zona só, branca. O brilho vale para todas as teclas juntas.
+
+## Controles
+
+| LED | Opções | Precisa de |
 |---|---|---|
 | Caps Lock | Normal · Aceso · Apagado · Piscar | Permissão "Monitoramento de Entrada" (uma vez) |
 | Luz do teclado | Brilho 0–100% · Automático (sensor de luz) | Nada |
 | MagSafe 3 | Verde · Laranja · Apagado · Sistema | Senha de administrador a cada troca |
-
-O LED da câmera não é controlável: é ligado em hardware à câmera.
-A luz do teclado é uma zona só (todas as teclas juntas, branca).
 
 **Requisitos:** Mac com Apple Silicon (M1 ou mais novo), macOS 14 ou mais novo.
 O MagSafe só aparece nos modelos com conector MagSafe 3.
@@ -80,7 +94,15 @@ Testado num MacBook Pro M5 com macOS 27.
 
 ## English
 
-Menu bar app for Apple Silicon MacBooks (macOS 14+) that controls the Caps Lock LED (on, off, blink, without changing Caps Lock state), the keyboard backlight (brightness and ambient auto-adjust) and the MagSafe 3 LED color (green, orange, off, system; asks for the admin password). Install with `curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh` (the app is not notarized, so a browser download gets blocked by Gatekeeper), or build with `./build.sh`. The camera LED is hardware-wired and cannot be controlled.
+Free, open source menu bar app to control the lights on Apple Silicon MacBooks (macOS 14+). macOS doesn't let you change these lights directly; this app does:
+
+- **Keyboard backlight:** set a fixed brightness or turn it off, without the ambient light sensor overriding it.
+- **Caps Lock LED:** on, off or blinking, without turning Caps Lock on (your typing doesn't change). Needs the Input Monitoring permission.
+- **MagSafe 3 LED:** green, orange or off, e.g. to turn off the charger light at night. Asks for the admin password. *(Beta: not yet confirmed on every model.)*
+
+Idle, it uses 0% CPU and doesn't poll. It can't control the camera LED (Apple wires it to the camera in hardware) or individual keys (the keyboard backlight is a single white zone).
+
+Install with `curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh` (the app is not notarized, so a browser download gets blocked by Gatekeeper), or build with `./build.sh`.
 
 ## Licença
 
