@@ -86,5 +86,8 @@ open "$target"
 
 cat <<'EOF'
 
-Pronto! Procure a lâmpada na barra de cima, perto do relógio.
+Pronto! O LEDs do Mac foi registrado no sistema.
+
+Para usar, clique com dois dedos na área de trabalho e escolha
+"Editar Widgets". Procure por "LEDs do Mac" e adicione o widget.
 EOF
