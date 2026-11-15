@@ -2,7 +2,7 @@
 
 # LEDs do Mac
 
-Um interruptor simples para ligar e desligar a luz do teclado do MacBook pela barra de menus.
+Um controle simples para a luz do teclado do MacBook pela barra de menus.
 
 [Baixar a versão mais recente](../../releases/latest) · [Reportar um problema](../../issues)
 
@@ -10,7 +10,7 @@ Um interruptor simples para ligar e desligar a luz do teclado do MacBook pela ba
 
 ## O que faz
 
-Clique na lâmpada ao lado do relógio e use o único interruptor para ligar ou apagar a luz do teclado. Ao ligar, o app restaura o último brilho conhecido; se não houver um brilho salvo, usa 50%.
+Clique na lâmpada ao lado do relógio e escolha um dos três modos: **Ligada**, **Apagada** ou **Ambiente**. O modo Ambiente devolve o controle ao sensor de luz do Mac. Ao ligar manualmente, o app restaura o último brilho conhecido; se não houver um brilho salvo, usa 50%.
 
 Não há controle de Caps Lock, MagSafe, cor, intensidade manual, senha de administrador ou permissão de Monitoramento de Entrada.
 
@@ -56,13 +56,13 @@ Para gerar ZIP, DMG e checksums de uma release:
 
 ## Como funciona
 
-O app usa `KeyboardBrightnessClient`, do framework privado CoreBrightness do macOS, para definir o brilho da luz integrada do teclado. Ao usar o interruptor, ele desliga o ajuste automático por luz ambiente para que a escolha permaneça estável.
+O app usa `KeyboardBrightnessClient`, do framework privado CoreBrightness do macOS, para definir o brilho da luz integrada do teclado. Os modos Ligada e Apagada desativam o ajuste automático; Ambiente o ativa novamente.
 
 Por usar uma API privada da Apple, uma atualização do macOS pode afetar esse recurso. Testado em um MacBook Pro M5 com macOS 27.
 
 ## English
 
-**LEDs do Mac** is a single menu-bar switch that turns an Apple Silicon MacBook keyboard backlight on or off. It requires macOS 14+, a built-in keyboard backlight, and uses no Input Monitoring, administrator password, camera, or personal-file access.
+**LEDs do Mac** is a small menu-bar control for an Apple Silicon MacBook keyboard backlight: **On**, **Off**, or **Ambient**, which returns control to the Mac's light sensor. It requires macOS 14+, a built-in keyboard backlight, and uses no Input Monitoring, administrator password, camera, or personal-file access.
 
 Install with:
 

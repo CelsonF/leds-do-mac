@@ -47,6 +47,13 @@ final class KeyboardBacklight {
         return get(client, sel, id)
     }
 
+    var autoBrightness: Bool {
+        guard let client, let id = keyboardID,
+              let (get, sel) = method("isAutoBrightnessEnabledForKeyboard:", GetBool.self)
+        else { return false }
+        return get(client, sel, id)
+    }
+
     @discardableResult
     func setBrightness(_ value: Float) -> Bool {
         guard let client, let id = keyboardID,
@@ -58,7 +65,8 @@ final class KeyboardBacklight {
         return set(client, sel, min(max(value, 0), 1), 0, true, id)
     }
 
-    private func setAutoBrightness(_ on: Bool) -> Bool {
+    @discardableResult
+    func setAutoBrightness(_ on: Bool) -> Bool {
         guard let client, let id = keyboardID,
               let (set, sel) = method("enableAutoBrightness:forKeyboard:", SetBool.self)
         else { return false }
