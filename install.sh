@@ -16,6 +16,7 @@ REPO="CelsonF/leds-do-mac"
 APP="LEDs.app"
 BUNDLE_ID="local.leds-do-mac"
 ZIP_URL="https://github.com/$REPO/releases/latest/download/LEDs-do-Mac.zip"
+SHA_URL="https://github.com/$REPO/releases/latest/download/LEDs-do-Mac.zip.sha256"
 
 info() { print -r -- "==> $1"; }
 fail() { print -r -- "Erro: $1" >&2; exit 1; }
@@ -48,6 +49,11 @@ trap 'rm -rf "$tmp"' EXIT
 
 info "Baixando a versão mais recente…"
 curl -fL --progress-bar "$ZIP_URL" -o "$tmp/LEDs.zip" || fail "não consegui baixar $ZIP_URL"
+curl -fL --silent --show-error "$SHA_URL" -o "$tmp/LEDs.zip.sha256" || fail "não consegui baixar a verificação SHA-256."
+expected_hash=$(awk 'NR == 1 { print $1 }' "$tmp/LEDs.zip.sha256")
+[[ "$expected_hash" =~ ^[a-fA-F0-9]{64}$ ]] || fail "o arquivo de verificação SHA-256 é inválido."
+actual_hash=$(shasum -a 256 "$tmp/LEDs.zip" | awk '{ print $1 }')
+[[ "$actual_hash" == "$expected_hash" ]] || fail "a verificação SHA-256 falhou; o download foi descartado."
 ditto -x -k "$tmp/LEDs.zip" "$tmp/out" || fail "o arquivo baixado está corrompido."
 [[ -d "$tmp/out/$APP" ]] || fail "o arquivo baixado não tem o $APP."
 codesign --verify --deep --strict "$tmp/out/$APP" 2>/dev/null || fail "a assinatura do app baixado não confere."

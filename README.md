@@ -25,7 +25,7 @@ O que ele **não** faz:
 | LED | Opções | Precisa de |
 |---|---|---|
 | Caps Lock | Normal · Aceso · Apagado · Piscar | Permissão "Monitoramento de Entrada" (uma vez) |
-| Luz do teclado | Brilho 0–100% · Automático (sensor de luz) | Nada |
+| Luz do teclado | Ligar/desligar · brilho 0–100% · Automático (sensor de luz) | Nada |
 | MagSafe 3 | Verde · Laranja · Apagado · Sistema | Senha de administrador a cada troca |
 
 **Requisitos:** Mac com Apple Silicon (M1 ou mais novo), macOS 14 ou mais novo.
@@ -41,6 +41,8 @@ curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh
 
 O [instalador](install.sh) baixa a versão mais recente, coloca o app em **Aplicativos** e abre.
 Para atualizar, rode a mesma linha de novo.
+
+O download é conferido com **SHA-256** antes de instalar. Se o arquivo estiver incompleto ou alterado, o instalador para sem copiar o app.
 
 > **Por que pelo Terminal?** O app não é notarizado pela Apple (isso exige uma conta paga de desenvolvedor).
 > Baixado pelo navegador, o macOS diz que não pode verificar o app e oferece mover para o Lixo.
@@ -60,6 +62,17 @@ Ao atualizar, o instalador limpa a permissão antiga (que deixa de valer na vers
 2. Ao abrir, o macOS bloqueia. Vá em **Ajustes do Sistema › Privacidade e Segurança**, role até o aviso sobre "LEDs" e clique em **Abrir Mesmo Assim**.
    Ou, pelo Terminal: `xattr -dr com.apple.quarantine /Applications/LEDs.app`
 
+### Instalar pelo .dmg
+
+Baixe `LEDs-do-Mac-<versão>.dmg` na página de [Releases](../../releases/latest), abra-o e arraste **LEDs.app** para **Applications**. O instalador usa uma janela compacta com fundo Retina, sem texto desenhado: os nomes dos ícones são do Finder e acompanham o modo Claro ou Escuro do macOS.
+
+## Segurança e privacidade
+
+- O código é público e o instalador valida o SHA-256 do pacote, a assinatura do bundle e o identificador `local.leds-do-mac` antes de instalar.
+- A permissão **Monitoramento de Entrada** serve apenas para controlar o LED físico do Caps Lock. O app não lê o que você digita e a permissão só pode ser ativada por você nos Ajustes do Sistema.
+- A senha de administrador só é solicitada quando você escolhe uma cor do MagSafe. Ela é tratada pelo diálogo do próprio macOS e não é lida ou armazenada pelo app.
+- Esta versão usa assinatura ad hoc, adequada para distribuição aberta e para detectar alterações no bundle, mas ainda **não é notarizada pela Apple**. A notarização exige uma conta Apple Developer e um certificado Developer ID.
+
 ## Compilar
 
 Precisa só das Command Line Tools do Xcode (`xcode-select --install`).
@@ -70,6 +83,12 @@ open build/LEDs.app
 ```
 
 O app é assinado ad hoc: **toda vez que recompilar**, o macOS trata como app novo e é preciso dar a permissão do Caps Lock outra vez.
+
+Para gerar todos os arquivos de uma release, incluindo checksums:
+
+```bash
+./package-release.sh
+```
 
 ## Como funciona
 

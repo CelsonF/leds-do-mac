@@ -63,6 +63,8 @@ final class LEDModel: ObservableObject {
 
     @Published var kbdLevel: Double = 0
     @Published var kbdAuto = false
+    @Published var kbdEnabled = false
+    private var lastKeyboardLevel: Double = 0.5
 
     @Published var magsafeSupported = false
     @Published var magsafeCurrent: UInt8?
@@ -109,6 +111,8 @@ final class LEDModel: ObservableObject {
         if keyboard.isAvailable {
             kbdLevel = Double(keyboard.brightness)
             kbdAuto = keyboard.autoBrightness
+            kbdEnabled = kbdLevel > 0.001
+            if kbdEnabled { lastKeyboardLevel = kbdLevel }
         }
         magsafeSupported = magsafe.isSupported
         magsafeCurrent = magsafe.current
@@ -220,12 +224,32 @@ final class LEDModel: ObservableObject {
             kbdAuto = false
         }
         kbdLevel = value
+        kbdEnabled = value > 0.001
+        if kbdEnabled { lastKeyboardLevel = value }
         keyboard.setBrightness(Float(value))
+    }
+
+    func setKeyboardEnabled(_ enabled: Bool) {
+        guard keyboard.isAvailable else { return }
+        if enabled {
+            let level = lastKeyboardLevel > 0.001 ? lastKeyboardLevel : 0.5
+            setKeyboard(level)
+        } else {
+            if kbdLevel > 0.001 { lastKeyboardLevel = kbdLevel }
+            if kbdAuto {
+                keyboard.setAutoBrightness(false)
+                kbdAuto = false
+            }
+            keyboard.setBrightness(0)
+            kbdLevel = 0
+            kbdEnabled = false
+        }
     }
 
     func setKeyboardAuto(_ on: Bool) {
         keyboard.setAutoBrightness(on)
         kbdAuto = on
+        if on { kbdEnabled = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.refresh() }
     }
 
@@ -298,16 +322,32 @@ struct PanelView: View {
 
             PanelSection(title: "Luz do teclado", icon: "keyboard") {
                 if model.keyboard.isAvailable {
+                    Toggle("Luz ligada", isOn: Binding(
+                        get: { model.kbdEnabled },
+                        set: { model.setKeyboardEnabled($0) }
+                    ))
+                    .font(.caption)
+
                     HStack(spacing: 8) {
                         Image(systemName: "sun.min").foregroundStyle(.secondary)
                         Slider(value: Binding(get: { model.kbdLevel }, set: { model.setKeyboard($0) }), in: 0...1)
                         Image(systemName: "sun.max.fill").foregroundStyle(.secondary)
                     }
+                    .disabled(!model.kbdEnabled)
+                    HStack {
+                        Text("Intensidade")
+                        Spacer()
+                        Text("\(Int(model.kbdLevel * 100))%")
+                            .monospacedDigit()
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                     Toggle("Automático (luz ambiente)",
                            isOn: Binding(get: { model.kbdAuto }, set: { model.setKeyboardAuto($0) }))
                         .font(.caption)
                 } else {
-                    Text("Luz do teclado indisponível neste Mac.").font(.caption).foregroundStyle(.secondary)
+                    Text("Luz do teclado indisponível neste Mac.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
             }
 
