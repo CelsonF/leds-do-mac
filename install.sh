@@ -88,6 +88,6 @@ cat <<'EOF'
 
 Pronto! O LEDs do Mac foi registrado no sistema.
 
-Para usar, clique com dois dedos na área de trabalho e escolha
-"Editar Widgets". Procure por "LEDs do Mac" e adicione o widget.
+Para usar, abra o Centro de Controle e escolha "Editar Controles".
+Procure por "Luz do teclado" ou "LEDs do Mac" e adicione o toggle.
 EOF

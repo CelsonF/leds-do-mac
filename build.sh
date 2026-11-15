@@ -11,7 +11,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
 
 swiftc -O -swift-version 5 -parse-as-library \
-  -target arm64-apple-macos14.0 \
+  -target arm64-apple-macos26.0 \
   Sources/*.swift \
   -o "$APP/Contents/MacOS/LEDs"
 
@@ -23,17 +23,17 @@ cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 # pelo App Intent no app principal, que é o único processo com acesso ao brilho.
 mkdir -p "$WIDGET/Contents/MacOS"
 swiftc -O -swift-version 5 -parse-as-library \
-  -target arm64-apple-macos14.0 \
+  -target arm64-apple-macos26.0 \
   Sources/KeyboardBacklight.swift \
   Sources/KeyboardLightControl.swift \
   Sources/KeyboardLightIntent.swift \
-  WidgetExtension/LEDsWidget.swift \
+  WidgetExtension/KeyboardLightControlWidget.swift \
   -o "$WIDGET/Contents/MacOS/LEDsWidget"
 cp WidgetExtension/Info.plist "$WIDGET/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$WIDGET/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" "$WIDGET/Contents/Info.plist"
 codesign --force --sign - --entitlements WidgetExtension/LEDsWidget.entitlements "$WIDGET"
 
-codesign --force --sign - --identifier local.leds-do-mac "$APP"
+codesign --force --sign - --identifier local.leds-do-mac --entitlements LEDsApp.entitlements "$APP"
 
 echo "OK: $PWD/$APP"

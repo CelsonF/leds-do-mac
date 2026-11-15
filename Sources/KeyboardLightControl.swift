@@ -1,39 +1,31 @@
-import AppIntents
 import Foundation
 
-enum KeyboardLightMode: String, CaseIterable, Identifiable, AppEnum {
-    case on = "Ligada"
-    case off = "Apagada"
-    case automatic = "Ambiente"
+enum KeyboardLightState {
+    static let appGroup = "group.local.leds-do-mac"
 
-    var id: Self { self }
+    private static var defaults: UserDefaults {
+        UserDefaults(suiteName: appGroup) ?? .standard
+    }
 
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Modo da luz do teclado")
-    static var caseDisplayRepresentations: [KeyboardLightMode: DisplayRepresentation] = [
-        .on: DisplayRepresentation(title: "Ligada"),
-        .off: DisplayRepresentation(title: "Apagada"),
-        .automatic: DisplayRepresentation(title: "Ambiente"),
-    ]
+    static var isAmbientEnabled: Bool {
+        get { defaults.bool(forKey: "keyboardLightAmbientEnabled") }
+        set { defaults.set(newValue, forKey: "keyboardLightAmbientEnabled") }
+    }
 }
 
 final class KeyboardLightController {
     private let keyboard = KeyboardBacklight()
-    private var lastBrightness: Float = 0.5
 
-    var isAvailable: Bool { keyboard.isAvailable }
-
-    func setMode(_ mode: KeyboardLightMode) -> Bool {
+    /// Ligado devolve a luz ao sensor ambiente do macOS; desligado a apaga.
+    @discardableResult
+    func setAmbientEnabled(_ enabled: Bool) -> Bool {
         guard keyboard.isAvailable else { return false }
 
-        switch mode {
-        case .on:
-            return keyboard.setBrightness(lastBrightness > 0.001 ? lastBrightness : 0.5)
-        case .off:
-            let brightness = keyboard.brightness
-            if brightness > 0.001 { lastBrightness = brightness }
-            return keyboard.setBrightness(0)
-        case .automatic:
-            return keyboard.setAutoBrightness(true)
-        }
+        let didChange = enabled
+            ? keyboard.setAutoBrightness(true)
+            : keyboard.setBrightness(0)
+
+        if didChange { KeyboardLightState.isAmbientEnabled = enabled }
+        return didChange
     }
 }
