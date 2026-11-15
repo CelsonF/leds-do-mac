@@ -61,7 +61,7 @@ got_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$tmp/out/$APP/C
 [[ "$got_id" == "$BUNDLE_ID" ]] || fail "o app baixado não é o LEDs do Mac ($got_id)."
 version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$tmp/out/$APP/Contents/Info.plist")
 
-# 4. Fecha a versão aberta (o app trata isso como saída normal e apaga o LED forçado)
+# 4. Fecha a versão aberta antes de substituir o app.
 if (( test_mode )); then
   pattern="$target/Contents/MacOS/LEDs"
 else
@@ -79,23 +79,12 @@ rm -rf "$target"
 ditto "$tmp/out/$APP" "$target"
 xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
 
-# 6. Atualização: o macOS guarda a permissão ligada à versão antiga, e ela
-#    deixa de valer. Limpa para o app pedir de novo, do zero.
-if (( updating && !test_mode )); then
-  tccutil reset ListenEvent "$BUNDLE_ID" >/dev/null 2>&1 || true
-fi
-
 info "LEDs do Mac $version instalado em $target"
 
-# 7. Abre
+# 6. Abre
 open "$target"
 
 cat <<'EOF'
 
 Pronto! Procure a lâmpada na barra de cima, perto do relógio.
-
-Para controlar o LED do Caps Lock, o macOS vai pedir a permissão
-"Monitoramento de Entrada": clique em "Abrir Ajustes do Sistema",
-ative "LEDs" e abra o app de novo. (Só você pode ativar essa
-permissão; nenhum instalador consegue fazer isso.)
 EOF

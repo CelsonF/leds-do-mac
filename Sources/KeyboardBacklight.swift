@@ -52,20 +52,13 @@ final class KeyboardBacklight {
         guard let client, let id = keyboardID,
               let (set, sel) = method("setBrightness:fadeSpeed:commit:forKeyboard:", SetBrightness.self)
         else { return false }
+        // O sensor ambiente pode apagar a luz em locais claros. Para o botão
+        // Ligar/Desligar ser previsível, a troca sempre passa a ser manual.
+        _ = setAutoBrightness(false)
         return set(client, sel, min(max(value, 0), 1), 0, true, id)
     }
 
-    /// "Ajustar o brilho do teclado com pouca luz" (sensor de luz ambiente).
-    /// Precisa estar desligado para o brilho manual valer em ambiente claro.
-    var autoBrightness: Bool {
-        guard let client, let id = keyboardID,
-              let (get, sel) = method("isAutoBrightnessEnabledForKeyboard:", GetBool.self)
-        else { return false }
-        return get(client, sel, id)
-    }
-
-    @discardableResult
-    func setAutoBrightness(_ on: Bool) -> Bool {
+    private func setAutoBrightness(_ on: Bool) -> Bool {
         guard let client, let id = keyboardID,
               let (set, sel) = method("enableAutoBrightness:forKeyboard:", SetBool.self)
         else { return false }
