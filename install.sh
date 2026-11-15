@@ -61,15 +61,17 @@ got_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$tmp/out/$APP/C
 [[ "$got_id" == "$BUNDLE_ID" ]] || fail "o app baixado não é o LEDs do Mac ($got_id)."
 version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$tmp/out/$APP/Contents/Info.plist")
 
-# 4. Fecha a versão aberta antes de substituir o app.
-if (( test_mode )); then
-  pattern="$target/Contents/MacOS/LEDs"
-else
-  pattern="/$APP/Contents/MacOS/LEDs"
-fi
-if pkill -f "$pattern" 2>/dev/null; then
+# 4. Fecha o agente e desregistra a extensão antes de substituir o bundle.
+# O app não tem janela: depois de um clique no Controle Central ele pode ficar
+# em execução em segundo plano, e o Finder o considera "em uso".
+extension="$target/Contents/PlugIns/LEDsWidget.appex"
+if [[ -d "$target" ]]; then
   info "Fechando a versão aberta…"
-  for _ in {1..20}; do pgrep -f "$pattern" >/dev/null || break; sleep 0.1; done
+  osascript -e "tell application id \"$BUNDLE_ID\" to quit" 2>/dev/null || true
+  pkill -x LEDs 2>/dev/null || true
+  pkill -x LEDsWidget 2>/dev/null || true
+  [[ -d "$extension" ]] && pluginkit -r "$extension" 2>/dev/null || true
+  for _ in {1..20}; do pgrep -x LEDs >/dev/null || break; sleep 0.1; done
 fi
 
 # 5. Instala
@@ -78,6 +80,7 @@ updating=0
 rm -rf "$target"
 ditto "$tmp/out/$APP" "$target"
 xattr -dr com.apple.quarantine "$target" 2>/dev/null || true
+pluginkit -a "$target" 2>/dev/null || true
 
 info "LEDs do Mac $version instalado em $target"
 

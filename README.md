@@ -32,6 +32,8 @@ curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh
 
 O [instalador](install.sh) baixa a versão mais recente, confere o SHA-256, instala o app em **Aplicativos** e o abre. Para atualizar, rode a mesma linha novamente.
 
+Nas atualizações, o instalador encerra automaticamente o agente e o controle carregado pelo macOS antes de substituir o app. Não arraste uma cópia nova por cima do app pelo Finder: use o comando acima para atualizar sem o aviso de que o app está em uso.
+
 ### Instalar pelo DMG
 
 1. Baixe o `LEDs-do-Mac-<versão>.dmg` na página de [Releases](../../releases/latest).
