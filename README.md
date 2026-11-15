@@ -5,6 +5,10 @@
 Controle as luzes do seu MacBook pela barra de menus: o LED do Caps Lock, a luz do teclado e o LED do carregador MagSafe.
 O app fica como uma lâmpada ao lado do relógio. Sem janela, sem ícone no Dock. Grátis e open source.
 
+[Baixar a versão mais recente](../../releases/latest) · [Ver código](.) · [Reportar um problema](../../issues)
+
+> Requer Mac com Apple Silicon (M1 ou mais novo) e macOS 14 ou mais novo.
+
 ## Para que serve
 
 O macOS não deixa você mexer nessas luzes diretamente. O LEDs do Mac deixa:
@@ -28,10 +32,9 @@ O que ele **não** faz:
 | Luz do teclado | Ligar/desligar · brilho 0–100% · Automático (sensor de luz) | Nada |
 | MagSafe 3 | Verde · Laranja · Apagado · Sistema | Senha de administrador a cada troca |
 
-**Requisitos:** Mac com Apple Silicon (M1 ou mais novo), macOS 14 ou mais novo.
-O MagSafe só aparece nos modelos com conector MagSafe 3.
+O MagSafe só aparece nos modelos com conector MagSafe 3. A cor ainda está em teste e pode não funcionar em todos os modelos.
 
-## Instalar
+## Instalação recomendada
 
 Abra o **Terminal** (Aplicativos › Utilitários), cole esta linha e aperte Enter:
 
@@ -48,6 +51,14 @@ O download é conferido com **SHA-256** antes de instalar. Se o arquivo estiver 
 > Baixado pelo navegador, o macOS diz que não pode verificar o app e oferece mover para o Lixo.
 > Arquivos baixados pelo Terminal não recebem essa marca, então o app abre direto.
 
+### Instalar pelo DMG
+
+1. Baixe o `LEDs-do-Mac-<versão>.dmg` na página de [Releases](../../releases/latest).
+2. Abra o arquivo e arraste **LEDs.app** para **Applications**.
+3. Se o macOS bloquear a primeira abertura, vá em **Ajustes do Sistema › Privacidade e Segurança** e clique em **Abrir Mesmo Assim**.
+
+O instalador DMG usa uma janela compacta com fundo Retina. O fundo não contém texto; os nomes dos ícones são renderizados pelo Finder e acompanham o modo Claro ou Escuro do macOS.
+
 ### Permissão do Caps Lock
 
 Na primeira abertura, o macOS pede a permissão **Monitoramento de Entrada**: clique em
@@ -56,22 +67,19 @@ Só você pode ativar essa permissão; nenhum instalador consegue fazer isso por
 
 Ao atualizar, o instalador limpa a permissão antiga (que deixa de valer na versão nova) e o pedido aparece de novo.
 
-### Instalar pelo .zip (alternativa)
+### Instalar pelo ZIP
 
 1. Baixe `LEDs-do-Mac.zip` na página de [Releases](../../releases/latest), descompacte e arraste `LEDs.app` para **Aplicativos**.
 2. Ao abrir, o macOS bloqueia. Vá em **Ajustes do Sistema › Privacidade e Segurança**, role até o aviso sobre "LEDs" e clique em **Abrir Mesmo Assim**.
    Ou, pelo Terminal: `xattr -dr com.apple.quarantine /Applications/LEDs.app`
 
-### Instalar pelo .dmg
-
-Baixe `LEDs-do-Mac-<versão>.dmg` na página de [Releases](../../releases/latest), abra-o e arraste **LEDs.app** para **Applications**. O instalador usa uma janela compacta com fundo Retina, sem texto desenhado: os nomes dos ícones são do Finder e acompanham o modo Claro ou Escuro do macOS.
-
 ## Segurança e privacidade
 
-- O código é público e o instalador valida o SHA-256 do pacote, a assinatura do bundle e o identificador `local.leds-do-mac` antes de instalar.
-- A permissão **Monitoramento de Entrada** serve apenas para controlar o LED físico do Caps Lock. O app não lê o que você digita e a permissão só pode ser ativada por você nos Ajustes do Sistema.
+- O código é público e o instalador valida o SHA-256 do pacote, a estrutura assinada do bundle e o identificador `local.leds-do-mac` antes de instalar.
+- A permissão **Monitoramento de Entrada** serve para acessar o LED físico e observar somente mudanças dos modificadores do teclado (`flagsChanged`) quando o Caps Lock está forçado. O app não registra texto digitado e a permissão só pode ser ativada por você nos Ajustes do Sistema.
 - A senha de administrador só é solicitada quando você escolhe uma cor do MagSafe. Ela é tratada pelo diálogo do próprio macOS e não é lida ou armazenada pelo app.
-- Esta versão usa assinatura ad hoc, adequada para distribuição aberta e para detectar alterações no bundle, mas ainda **não é notarizada pela Apple**. A notarização exige uma conta Apple Developer e um certificado Developer ID.
+- O SHA-256 protege contra download corrompido ou alterado depois da publicação. Como o checksum é publicado no mesmo repositório, ele não substitui uma assinatura de identidade independente.
+- Esta versão usa assinatura ad hoc para verificar a estrutura do bundle, mas ainda **não é assinada com Developer ID nem notarizada pela Apple**. A notarização exige uma conta Apple Developer e um certificado Developer ID.
 
 ## Compilar
 
@@ -113,15 +121,15 @@ Testado num MacBook Pro M5 com macOS 27.
 
 ## English
 
-Free, open source menu bar app to control the lights on Apple Silicon MacBooks (macOS 14+). macOS doesn't let you change these lights directly; this app does:
+Free, open source menu bar app to control the lights on Apple Silicon MacBooks (macOS 14+). It stays in the menu bar and can control:
 
-- **Keyboard backlight:** set a fixed brightness or turn it off, without the ambient light sensor overriding it.
+- **Keyboard backlight:** turn it on or off, set a fixed brightness, or use the ambient-light sensor.
 - **Caps Lock LED:** on, off or blinking, without turning Caps Lock on (your typing doesn't change). Needs the Input Monitoring permission.
 - **MagSafe 3 LED:** green, orange or off, e.g. to turn off the charger light at night. Asks for the admin password. *(Beta: not yet confirmed on every model.)*
 
-Idle, it uses 0% CPU and doesn't poll. It can't control the camera LED (Apple wires it to the camera in hardware) or individual keys (the keyboard backlight is a single white zone).
+Idle, it uses 0% CPU and doesn't poll. It can't control the camera LED (Apple wires it to the camera in hardware) or individual keys (the keyboard backlight is a single white zone). MagSafe control is experimental and requires a Mac with MagSafe 3.
 
-Install with `curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh` (the app is not notarized, so a browser download gets blocked by Gatekeeper), or build with `./build.sh`.
+Install with `curl -fsSL https://raw.githubusercontent.com/CelsonF/leds-do-mac/main/install.sh | zsh`. The installer checks the published SHA-256 before installing. A DMG and ZIP are also available on the [latest release](../../releases/latest). The app is not notarized by Apple yet, so browser downloads may need the **Open Anyway** confirmation in macOS Privacy & Security.
 
 ## Licença
 
