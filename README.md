@@ -2,7 +2,7 @@
 
 # LEDs do Mac
 
-Um toggle simples para a luz do teclado do MacBook no Centro de Controle do macOS.
+O toggle de **Ambiente/Apagada** que o macOS ainda não oferece para a luz do teclado do MacBook.
 
 [Baixar a versão mais recente](../../releases/latest) · [Reportar um problema](../../issues)
 
@@ -13,6 +13,12 @@ Um toggle simples para a luz do teclado do MacBook no Centro de Controle do macO
 O toggle tem dois estados: **Ambiente** e **Apagada**. Ligado, devolve a luz do teclado ao sensor de luz do Mac; desligado, apaga a luz. É um complemento do controle nativo **Keyboard Brightness**, sem alterar o controle da Apple.
 
 Não há controle de Caps Lock, MagSafe, cor, intensidade manual, senha de administrador ou permissão de Monitoramento de Entrada.
+
+## Por que existe
+
+O macOS já inclui o controle **Keyboard Brightness**, mas ele é um slider. Para apagar a luz de vez ou devolver a decisão ao sensor ambiente, é preciso abrir Ajustes do Sistema ou ajustar o slider manualmente.
+
+Este projeto coloca uma ação de um toque na mesma galeria de controles: **ligado = ambiente**; **desligado = apagada**. É pequeno de propósito.
 
 ### Adicionar o controle
 
@@ -56,8 +62,9 @@ Precisa apenas das Command Line Tools do Xcode (`xcode-select --install`).
 
 ```bash
 ./build.sh
-open build/LEDs.app
 ```
+
+O resultado fica em `build/LEDs.app`. Para instalar e registrar o controle corretamente, use o instalador da seção acima; abrir diretamente a cópia em `build/` serve apenas para testes e pode fazer o macOS apontar a extensão para essa pasta temporária.
 
 Para gerar ZIP, DMG e checksums de uma release:
 
@@ -73,7 +80,7 @@ Por usar uma API privada da Apple, uma atualização do macOS pode afetar esse r
 
 ## English
 
-**LEDs do Mac** is a small Control Center toggle for an Apple Silicon MacBook keyboard backlight. **On** returns control to the Mac's ambient-light sensor; **Off** turns the light off. Install and open the app once, then add **Keyboard Light** from **Edit Controls**. It requires macOS 26+, a built-in keyboard backlight, and uses no Input Monitoring, administrator password, camera, or personal-file access.
+**LEDs do Mac** is the small **Ambient/Off** Control Center toggle that macOS doesn't offer for an Apple Silicon MacBook keyboard backlight. Apple's Keyboard Brightness control is a slider; this project adds one-tap behavior: **On** returns control to the ambient-light sensor and **Off** turns the light off. Install and open the app once, then add **Keyboard Light** from **Edit Controls**. It requires macOS 26+, a built-in keyboard backlight, and uses no Input Monitoring, administrator password, camera, or personal-file access.
 
 Install with:
 
